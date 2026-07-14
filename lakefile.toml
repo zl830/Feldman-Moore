@@ -6,7 +6,7 @@ defaultTargets = ["MyProject"]
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
 autoImplicit = true
-relaxedAutoImplicit = false
+relaxedAutoImplicit = true
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
 
