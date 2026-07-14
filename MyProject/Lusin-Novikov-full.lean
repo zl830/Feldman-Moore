@@ -7,7 +7,7 @@ Author: Zelong Li and Ran Tao
 import Mathlib.Topology.Basic
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.Tactic
-import FM.LusinNovikov
+import MyProject.LusinNovikov
 
 /-!
   Project for ICARM Summer School
@@ -99,4 +99,4 @@ theorem LN_Borel : (∃ S : Set (Set α),
     assumption
 end Project
 
--- hello
+-- hello Zelong
