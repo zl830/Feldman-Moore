@@ -71,6 +71,8 @@ variable {β : Type*} [mβ : MeasurableSpace β] [StandardBorelSpace β]
 variable {f : α → β} (fmeas : Measurable f)
 
 include fmeas in
+/-- Lusin-Novikov for Borel functions
+-/
 theorem LN_BorelFunction : (∃ S : Set (Set α),
   (∀ t ∈ S, BorelPartialSection f t) ∧ S.Countable ∧ Set.univ ⊆ ⋃₀ S)
   ∨ ∃ g : (ℕ → Bool) → α, Continuous g ∧ Function.Injective g
@@ -97,6 +99,40 @@ theorem LN_BorelFunction : (∃ S : Set (Set α),
     assumption
 
 
+/-- X,Y std Borel spaces, f : X → Y is Borel if graph(f) is analytic.
+-/
+theorem fun_borel_if_analytic {X Y : Type*} [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X]
+    [PolishSpace X] [MeasurableSpace Y] [TopologicalSpace Y] [BorelSpace Y] [PolishSpace Y]
+    {f : X → Y} (anal_graph : MeasureTheory.AnalyticSet (Set.graphOn f Set.univ)) :
+    Measurable f := by
+  let G := Set.graphOn f Set.univ
+  have (A : Set Y) (MeasA : MeasurableSet A) : MeasureTheory.AnalyticSet (f ⁻¹' A) := by
+    have h₁ : ∀ x : X, (x ∈ f⁻¹' A) ↔ (∃ y : Y, f x = y ∧ y ∈ A) := by grind
+    have h₂ : f⁻¹' A = Prod.fst '' (Prod.snd⁻¹' A ∩ G) := by
+      ext
+      constructor
+      · simp [h₁, G]
+      · simp [h₁, G]
+    rw [h₂]
+    apply MeasureTheory.AnalyticSet.image_of_continuous
+    · rw [Set.inter_eq_iInter]
+      apply MeasureTheory.AnalyticSet.iInter
+      intro b
+      cases b
+      · exact anal_graph
+      · apply MeasurableSet.analyticSet
+        apply MeasA.preimage
+        fun_prop
+    · fun_prop
+  intro A MeasA
+  apply MeasureTheory.AnalyticSet.measurableSet_of_compl
+  · apply this A MeasA
+  · rw [← Set.preimage_compl]
+    apply this
+    exact MeasA.compl
+
+/-- Lusin Novikov for Borel sets
+-/
 theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpace X] [TopologicalSpace X] [PolishSpace X]
     [BorelSpace X] [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
     {A : Set (X × Y)} (BorelA : MeasurableSet A) : Or (∃ F : ℕ → X → Y, (∀ n, Measurable (F n))∧
@@ -140,7 +176,12 @@ theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpac
       · intro n
         unfold F
         apply Measurable.dite
-        · sorry
+        · have boreln : MeasurableSet (f '' enum n) := by
+            apply MeasurableSet.image_of_measurable_injOn
+            apply (hS₁ n).left
+            sorry
+          letI := upgradeStandardBorel (f '' enum n)
+          sorry
         · unfold const
           fun_prop
         · apply MeasurableSet.image_of_measurable_injOn
@@ -190,5 +231,3 @@ theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpac
 
 
 end Project
-
--- hello Zelong
