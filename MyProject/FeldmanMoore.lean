@@ -1,4 +1,4 @@
---import MyProject.LusinNovikovFull
+import MyProject.LusinNovikovFull
 import MyProject.CBobjects
 import Mathlib.MeasureTheory.MeasurableSpace.Instances
 
