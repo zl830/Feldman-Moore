@@ -5,10 +5,11 @@ import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.Tactic
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Data.Set.Card
+import Mathlib.Topology.Algebra.Group.Basic
 
 
 variable {X : Type*} [MeasurableSpace X]
-
+set_option autoImplicit false
 
 /- Defining cBer -/
 
@@ -43,9 +44,23 @@ structure lcBGraph (G : SimpleGraph X) extends measGraph G, lcGraph G where
 
 /- Defining Borel edge colouring-/
 
-structure isEdgeCol {G S : Type*} (c : G → S) (G : SimpleGraph X) where
-  disjointCols : ( ∀ (p q : G.edgeSet), p ≠ q ) → (c p) ≠ (c q)
+def ordEdgeSet (G : SimpleGraph X) := { p : X × X | G.Adj p.1 p.2 }
 
-structure isMeasEdgeCol {G S : Type*} [MeasurableSpace S] [MeasurableSpace G]
-    (c : G → S) (G : SimpleGraph X) extends isEdgeCol c G where
+structure isEdgeCol {S : Type*} (G : SimpleGraph X) (c : ordEdgeSet G → S) where
+  disjointCols : ( ∀ (p q : ordEdgeSet G), p ≠ q  → (c p) ≠ (c q) )
+
+structure isMeasEdgeCol {S : Type*} [MeasurableSpace S] (G : SimpleGraph X)
+    (G : SimpleGraph X) (c : ordEdgeSet G → S) extends isEdgeCol G c where
   measCol : Measurable c
+
+
+/- Defining countable discrete groups -/
+
+structure discreteGroup {G : Type*} [Group G] [TopologicalSpace G] where
+  TopGroup : IsTopologicalGroup G
+  discreteTop : DiscreteTopology G
+
+structure cdGroup {G : Type*} [Group G] [TopologicalSpace G] where
+  ctbl : Countable G
+
+/- For Borel group actions : use MeasurableSMul₂-/
