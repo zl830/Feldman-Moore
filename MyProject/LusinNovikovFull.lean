@@ -133,7 +133,8 @@ theorem fun_borel_if_analytic {X Y : Type*} [MeasurableSpace X] [TopologicalSpac
 
 /-- Lusin Novikov for Borel sets
 -/
-theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpace X] [TopologicalSpace X] [PolishSpace X]
+theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpace X]
+    [TopologicalSpace X] [PolishSpace X]
     [BorelSpace X] [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
     {A : Set (X × Y)} (BorelA : MeasurableSet A) : Or (∃ F : ℕ → X → Y, (∀ n, Measurable (F n))∧
     A ⊆ ⋃ n, {p : X × Y | F n p.1 = p.2}) (∃ x : X, (∃ g : (ℕ → Bool) → {y : Y | (x,y) ∈ A},
@@ -178,10 +179,36 @@ theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpac
         apply Measurable.dite
         · have boreln : MeasurableSet (f '' enum n) := by
             apply MeasurableSet.image_of_measurable_injOn
-            apply (hS₁ n).left
-            sorry
+            · apply (hS₁ n).left
+            · apply Measf
+            · apply (hS₁ n).right
+          have := boreln.standardBorel
           letI := upgradeStandardBorel (f '' enum n)
-          sorry
+          let polishenum := (upgradeStandardBorel (f '' enum n)).toTopologicalSpace
+          apply fun_borel_if_analytic
+          apply MeasurableSet.analyticSet
+          have hG : Set.graphOn (G n) Set.univ = Prod.map (↑) id ⁻¹' Subtype.val '' enum n := by
+            ext x
+            simp only [Set.mem_graphOn, Set.mem_univ, true_and, Set.mem_preimage, Prod.map, id_eq,
+              G]
+            generalize_proofs p₂
+            have pchoose := p₂.choose_spec
+            unfold f
+            constructor
+            · grind
+            · intro h
+              have hfinj := (hS₁ n).right
+              obtain ⟨u, hue, huk⟩ := h
+              specialize @hfinj p₂.choose pchoose.1 u hue
+              rw [pchoose.2, Subtype.ext_iff, huk] at hfinj
+              exact congrArg Prod.snd (hfinj (congrArg Prod.fst huk.symm))
+          rw [hG]
+          apply MeasurableSet.preimage
+          · apply MeasurableSet.image_of_measurable_injOn
+            · apply (hS₁ n).left
+            · fun_prop
+            · simp
+          · fun_prop
         · unfold const
           fun_prop
         · apply MeasurableSet.image_of_measurable_injOn
