@@ -15,9 +15,7 @@ set_option autoImplicit false
 
 theorem FeldmanMooreEdgeColoring {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
   {G : SimpleGraph X} (lcbG : lcBGraph G) :
-    ∃ (c : ordEdgeSet G → ℕ) , isMeasEdgeCol G c  := by
-    --hello
-    sorry
+    ∃ (c : ordEdgeSet G → ℕ) , isMeasEdgeCol G c  := sorry
 
 /- Feldman-Moore for CBERs: Suppose that E is a CBER on std Borel X, then there is
     a countable group Γ and a Borel action Γ → X whose orbit equivalence relation is E,
