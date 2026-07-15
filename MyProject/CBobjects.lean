@@ -25,8 +25,11 @@ structure cBer [StandardBorelSpace X] (E: X → X → Prop) extends measR E, ctb
 
 /- Defining locally countable Borel graphs-/
 
+/- ordEdgeSet is the ordered subset of X × X that is the edge set-/
+def ordEdgeSet (G : SimpleGraph X) := { p : X × X | G.Adj p.1 p.2 }
+
 structure measGraph (G : SimpleGraph X) where
-  Meas : MeasurableSet { p : X × X | G.Adj p.1 p.2 }
+  Meas : MeasurableSet (ordEdgeSet G)
 
 structure lcGraph (G : SimpleGraph X) where
   Ctbl : ∀ (x : X), { y : X | G.Adj x y }.Countable
@@ -44,23 +47,24 @@ structure lcBGraph (G : SimpleGraph X) extends measGraph G, lcGraph G where
 
 /- Defining Borel edge colouring-/
 
-def ordEdgeSet (G : SimpleGraph X) := { p : X × X | G.Adj p.1 p.2 }
-
 structure isEdgeCol {S : Type*} (G : SimpleGraph X) (c : ordEdgeSet G → S) where
   disjointCols : ( ∀ (p q : ordEdgeSet G), p ≠ q  → (c p) ≠ (c q) )
 
-structure isMeasEdgeCol {S : Type*} [MeasurableSpace S] (G : SimpleGraph X)
-    (G : SimpleGraph X) (c : ordEdgeSet G → S) extends isEdgeCol G c where
+structure isMeasEdgeCol {S : Type*} [MeasurableSpace S] (G : SimpleGraph X) (c : ordEdgeSet G → S)
+  extends isEdgeCol G c where
   measCol : Measurable c
 
 
 /- Defining countable discrete groups -/
 
-structure discreteGroup {G : Type*} [Group G] [TopologicalSpace G] where
+structure discreteSpace (S : Type*) [TopologicalSpace S] where
+  discreteTop : DiscreteTopology S
+
+structure discreteGroup (G : Type*) [TopologicalSpace G] [Group G] extends discreteSpace G where
   TopGroup : IsTopologicalGroup G
-  discreteTop : DiscreteTopology G
 
 structure cdGroup {G : Type*} [Group G] [TopologicalSpace G] where
   ctbl : Countable G
+  discrete : discreteGroup G
 
 /- For Borel group actions : use MeasurableSMul₂-/
