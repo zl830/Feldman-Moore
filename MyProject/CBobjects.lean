@@ -48,7 +48,10 @@ structure lcBGraph (G : SimpleGraph X) extends measGraph G, lcGraph G where
 /- Defining Borel edge colouring-/
 
 structure isEdgeCol {S : Type*} (G : SimpleGraph X) (c : ordEdgeSet G → S) where
-  disjointCols : ( ∀ (p q : ordEdgeSet G), p ≠ q  → (c p) ≠ (c q) )
+  disjointCols : ( ∀ (p q: ordEdgeSet G),
+  ( p.1.1 = q.1.1 ∨ p.1.2 = q.1.2 ∨ p.1.1 = q.1.2 ∨ p.1.2 = q.1.1 ) ∧
+  ¬ ((p.1 = q.1) ∨ (p.1 = q.1.swap))  → (c p) ≠ (c q) )
+  symmetric : (∀ (p q : ordEdgeSet G) , (p.1 = q.1) ∨ (p.1 = q.1.swap) → (c p) = (c q))
 
 structure isMeasEdgeCol {S : Type*} [MeasurableSpace S] (G : SimpleGraph X) (c : ordEdgeSet G → S)
   extends isEdgeCol G c where
