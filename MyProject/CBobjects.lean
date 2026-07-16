@@ -66,7 +66,7 @@ structure discreteSpace (S : Type*) [TopologicalSpace S] where
 structure discreteGroup (G : Type*) [TopologicalSpace G] [Group G] extends discreteSpace G where
   TopGroup : IsTopologicalGroup G
 
-structure cdGroup {G : Type*} [Group G] [TopologicalSpace G] where
+structure cdGroup (G : Type*) [Group G] [TopologicalSpace G] where
   ctbl : Countable G
   discrete : discreteGroup G
 
