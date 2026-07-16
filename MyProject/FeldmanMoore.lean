@@ -25,6 +25,7 @@ variable {α : Type} (s : Set α)
 /-- Feldman-Moore in the context of edge-colorings: Suppose G is a Borel graph
     on std Borel X, then G admits a countable Borel edge-coloring
 -/
+
 theorem FeldmanMooreEdgeColoring_uncountable {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
     (hNotCtbl : ¬Countable X)
   {G : SimpleGraph X} (lcbG : lcBGraph G) :
@@ -37,45 +38,34 @@ theorem FeldmanMooreEdgeColoring_uncountable {X : Type*} [MeasurableSpace X] [St
     -- need to show H is locally countable Borel
     have lcbH : lcBGraph H := sorry
 
-
     -- using the Cantor FM-colouring version
     let C_edgeCol := (FM_edgeCol_Cantor lcbH)
     rcases C_edgeCol with ⟨cH, hcH⟩
 
     -- cG : ordEdgeSet G → ℕ given by ordEdgeSet G → ordEdgeSet H → ℕ
+    have GtoH_prop : ∀ p : X × X, G.Adj p.1 p.2 → H.Adj (isoC p.1) (isoC p.2) := by
+      intro p h
+      change (SimpleGraph.map isoC.toEmbedding G).Adj (isoC.toEmbedding p.1) (isoC.toEmbedding p.2)
+      rw [SimpleGraph.map_adj]
+      simp [h]
     let GtoH : ordEdgeSet G → ordEdgeSet H := fun (x : ordEdgeSet G) =>
-    ⟨(isoC.toEmbedding x.1.1 , isoC.toEmbedding x.1.2), ?_⟩
+      ⟨(isoC.toEmbedding x.1.1 , isoC.toEmbedding x.1.2), GtoH_prop x.1 x.2⟩
+    let gtoh2 := Prod.map isoC.toEmbedding isoC.toEmbedding
+    --let GtoH2 : ordEdgeSet G → ordEdgeSet H :=
     let cG : ordEdgeSet G → ℕ := cH ∘ GtoH
     rcases hcH with ⟨h1, h2⟩
     · use cG
       refine ⟨⟨?_, ?_⟩, ?_⟩
       · intro p q hpq
         rcases hpq with ⟨com , notsame⟩
-
         rcases com with case1 | case2 | case3 | case4
-        unfold cG
-        simp only [Function.comp_apply, ne_eq]
-        unfold GtoH
-        apply h1.1
-        grind
-        --
-        unfold cG
-        simp only [Function.comp_apply, ne_eq]
-        unfold GtoH
-        apply h1.1
-        grind
-        --
-        unfold cG
-        simp only [Function.comp_apply, ne_eq]
-        unfold GtoH
-        apply h1.1
-        grind
-        --
-        unfold cG
-        simp only [Function.comp_apply, ne_eq]
-        unfold GtoH
-        apply h1.1
-        grind
+        all_goals {
+          unfold cG
+          simp only [Function.comp_apply, ne_eq]
+          unfold GtoH
+          apply h1.1
+          grind
+        }
         --
       · intro p q hpq
         unfold cG
@@ -84,17 +74,8 @@ theorem FeldmanMooreEdgeColoring_uncountable {X : Type*} [MeasurableSpace X] [St
         apply h1.2
         grind
       · unfold cG
-        have h3 : Measurable GtoH := by
-          let hMeas := Measurable.prodMap isoC.measurable isoC.measurable
-          --have hEqual : GtoH = (isoC.measurable.comp measurable_fst).prodMk (isoC.measurable.comp measurable_snd) := sorry
-          sorry
+        have h3 : Measurable GtoH := by measurability
         apply Measurable.fun_comp h2 h3
-    · unfold ordEdgeSet
-      change (SimpleGraph.map isoC.toEmbedding G).Adj (isoC.toEmbedding x.1.1) (isoC.toEmbedding x.1.2)
-      rw [SimpleGraph.map_adj]
-      use x.1.1, x.1.2
-      simp only [Function.Embedding.coeFn_mk, MeasurableEquiv.coe_toEquiv, and_self, and_true]
-      exact x.property
 
 
 
