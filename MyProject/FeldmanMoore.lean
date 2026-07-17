@@ -3,20 +3,91 @@ import MyProject.CBobjects
 import Mathlib.MeasureTheory.MeasurableSpace.Instances
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.Combinatorics.SimpleGraph.Maps
+import Mathlib.Topology.MetricSpace.Polish
+import Mathlib.Data.Nat.Pairing
 
+noncomputable section
 namespace FeldmanMoore
 
 set_option autoImplicit false
 
-
-
 open PolishSpace
+open Project
 
 
+def leastDiffer : { p : (ℕ → Bool) × (ℕ → Bool) | ∃ (n : ℕ), p.1 n ≠ p.2 n } → ℕ :=
+  fun p => Nat.find p.property
+
+theorem leastDiffer_measurable : Measurable leastDiffer := by
+  apply measurable_find
+  measurability
+
+def cantorOrderRel : { p : (ℕ → Bool) × (ℕ → Bool) | ∃ (n : ℕ), p.1 n ≠ p.2 n } → Prop :=
+  fun p => p.1.1 (leastDiffer p) < p.1.2 (leastDiffer p)
+
+theorem nat_bool_uncountable : Uncountable (ℕ → Bool) := by
+  rw [uncountable_iff_forall_not_surjective]
+  intro f hf
+  obtain ⟨b, hb⟩ :=
+    Function.exists_fixed_point_of_surjective f hf Bool.not
+  cases b <;> simp at hb
+
+open Classical in
 /-- Feldman-Moore Edge colouring for the Cantor space -/
 theorem FM_edgeCol_Cantor
   {G : SimpleGraph (ℕ → Bool)} (lcbG : lcBGraph G) :
-    ∃ (c : ordEdgeSet G → ℕ) , isMeasEdgeCol G c  := sorry
+    ∃ (c : ordEdgeSet G → ℕ) , isMeasEdgeCol G c  := by
+      let C := (ℕ → Bool)
+      have GMeas : MeasurableSet (ordEdgeSet G) := by
+        let h := (lcbG.tomeasGraph).Meas
+        assumption
+      have CstdBorel : StandardBorelSpace C := inferInstance
+      let CTop : TopologicalSpace C := (upgradeStandardBorel C).toTopologicalSpace
+      have CPolish : PolishSpace C := inferInstance
+      let ln := FullLusinNovikov GMeas
+      rcases ln with ⟨ F, ⟨ MeasFn, unionFcoversG ⟩ ⟩ | ⟨x, g, _, gInj⟩
+      -- F : Nat → C → C , F(n) is a total function C → C,
+      -- naming the neighbours of x with n, x in C
+
+      -- define the edge colouring : ordEdgeSet G → ℕ × ℕ × ℕ
+      -- d(x,y) = (a,b,c) where F a (x) = y and F b (y) = x and x < y
+      -- and c is the least Nat such that c is the first coordinate for which x(c) ≠ y(c)
+      -- F0 (x,y) = (n, m) ↔ F n x = y ∧ F m y = x
+      · let F0 : {x : C × C | ∃ (n m : ℕ), F n x.1 = x.2 ∧ F m x.2 = x.1 } → ℕ × ℕ  := by
+          intro S
+          rcases S.property with h
+          simp only [exists_and_left, exists_and_right, Set.mem_setOf_eq] at h
+          rcases h with ⟨hn, hm⟩
+          sorry
+      -- F1 : (x,y) ↦ (n, m) ↔ F n x = y ∧ F m y = x ∧ x < y
+        let F1 (x : ordEdgeSet G) : ℕ × ℕ :=
+        if cantorOrderRel ⟨x, sorry⟩ then (F0 ⟨x.1, sorry⟩) else (F0 ⟨x.1.swap, sorry⟩)
+        -- F2 : (x,y) ↦ n ↔ n is the least such that x(n) ≠ y(n)
+        let F2 (x : ordEdgeSet G) : ℕ := by
+          have h4 : ∃ (n : ℕ), x.1.1 n ≠ x.1.2 n := by sorry
+          apply leastDiffer ⟨x, h4⟩
+        let c (x : ordEdgeSet G) : (ℕ × ℕ) × ℕ := (F1 x, F2 x)
+        let bij1 := Equiv.prodCongr Nat.pairEquiv (Equiv.refl ℕ)
+        let bij := (Equiv.trans bij1 Nat.pairEquiv)
+        use Function.comp bij.toFun c
+        refine ⟨?_ , ?_⟩
+        -- the composition is an edge colouring
+        · sorry
+        -- the composition is measurable
+        · unfold c
+          have F2Meas : Measurable F2 := by
+            let lDMeas := leastDiffer_measurable
+            measurability
+          have F1Meas : Measurable F1 := by
+            unfold F1
+            sorry
+          measurability
+      -- the other case of LN
+      · exfalso
+        have : Uncountable (ℕ → Bool) := nat_bool_uncountable
+        have : Countable {y | (x, y) ∈ ordEdgeSet G} := lcbG.Ctbl _
+        exact not_injective_uncountable_countable g gInj
+
 
 variable {α : Type} (s : Set α)
 #check (s : Type)
@@ -50,8 +121,6 @@ theorem FeldmanMooreEdgeColoring_uncountable {X : Type*} [MeasurableSpace X] [St
       simp [h]
     let GtoH : ordEdgeSet G → ordEdgeSet H := fun (x : ordEdgeSet G) =>
       ⟨(isoC.toEmbedding x.1.1 , isoC.toEmbedding x.1.2), GtoH_prop x.1 x.2⟩
-    let gtoh2 := Prod.map isoC.toEmbedding isoC.toEmbedding
-    --let GtoH2 : ordEdgeSet G → ordEdgeSet H :=
     let cG : ordEdgeSet G → ℕ := cH ∘ GtoH
     rcases hcH with ⟨h1, h2⟩
     · use cG
