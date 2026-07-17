@@ -202,7 +202,42 @@ theorem FeldmanMoore {X : Type*} (hNotCtbl : ¬Countable X) [MeasX : MeasurableS
       · apply h1.Meas
       · have := stdborelX.instMeasurableEq
         apply this.measurableSet_diagonal
-    · sorry
+    · constructor
+      intro x
+      have neigheq : {y : X | graph.Adj x y} = {y : X | E y x} \ {x} := by
+        ext y
+        constructor
+        · intro hy
+          unfold graph at hy
+          simp only [SimpleGraph.fromEdgeSet_adj, Set.mem_setOf_eq] at hy
+          rcases hy with ⟨⟨x1, x2, neq, eqE⟩, neq⟩
+          have yin : y = x1 ∨ y = x2 := by grind
+          have xin : x = x1 ∨ x = x2 := by grind
+          constructor
+          · rcases yin with y1 | y2
+            · rcases xin with x1 | x2
+              · grind
+              · grind
+            · rcases xin with x1 | x2
+              · apply h2.symm
+                grind
+              · grind
+          · grind
+        · intro hy
+          unfold graph
+          simp only [ne_eq, Subtype.exists, exists_and_right, Subtype.mk.injEq, exists_prop,
+            SimpleGraph.fromEdgeSet_adj, Set.mem_setOf_eq, Sym2.mem_iff, exists_eq_or_imp,
+            ↓existsAndEq, true_and]
+          constructor
+          · rcases hy with ⟨yEx, yneqx⟩
+            left; use y; constructor
+            · grind
+            · apply h2.symm; grind
+          · grind
+      rw [neigheq]
+      have : {y : X | E y x} \ {x} ⊆ {y : X | E y x} := by grind
+      apply Set.Countable.mono this
+      apply h3 x
     · apply stdborelX
   have h := FeldmanMooreEdgeColoring_uncountable hNotCtbl lcbG
   rcases h with ⟨c, measc⟩
