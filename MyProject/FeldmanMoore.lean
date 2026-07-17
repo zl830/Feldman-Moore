@@ -5,6 +5,7 @@ import Mathlib.Algebra.Group.MinimalAxioms
 import Mathlib.GroupTheory.CoprodI
 import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Data.Nat.Pairing
+import Mathlib.Combinatorics.SimpleGraph.Maps
 
 noncomputable section
 namespace FeldmanMoore
