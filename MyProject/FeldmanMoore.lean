@@ -47,6 +47,8 @@ theorem FM_edgeCol_Cantor
       have CPolish : PolishSpace C := inferInstance
       let ln := FullLusinNovikov GMeas
       rcases ln with ⟨ F, ⟨ MeasFn, unionFcoversG ⟩ ⟩ | ⟨x, g, _, gInj⟩
+
+
       -- F : Nat → C → C , F(n) is a total function C → C,
       -- naming the neighbours of x with n, x in C
 
@@ -54,15 +56,16 @@ theorem FM_edgeCol_Cantor
       -- d(x,y) = (a,b,c) where F a (x) = y and F b (y) = x and x < y
       -- and c is the least Nat such that c is the first coordinate for which x(c) ≠ y(c)
       -- F0 (x,y) = (n, m) ↔ F n x = y ∧ F m y = x
-      · let F0 : {x : C × C | ∃ (n m : ℕ), F n x.1 = x.2 ∧ F m x.2 = x.1 } → ℕ × ℕ  := by
-          intro S
-          rcases S.property with h
-          simp only [exists_and_left, exists_and_right, Set.mem_setOf_eq] at h
-          rcases h with ⟨hn, hm⟩
-          sorry
+      · let S : Set (C × C) := {x : C × C | ∃ (n m : ℕ), F n x.1 = x.2 ∧ F m x.2 = x.1}
+        have : ∀ x ∈ S, ∃ (n m : ℕ), F n x.1 = x.2 ∧ F m x.2 = x.1 := by simp [S]
+        choose fn fm hn hm using this
+        let F0 : {x : C × C | ∃ (n m : ℕ), F n x.1 = x.2 ∧ F m x.2 = x.1 } →
+        ℕ × ℕ  := fun x => (fn x x.property, fm x x.property)
+
       -- F1 : (x,y) ↦ (n, m) ↔ F n x = y ∧ F m y = x ∧ x < y
         let F1 (x : ordEdgeSet G) : ℕ × ℕ :=
         if cantorOrderRel ⟨x, sorry⟩ then (F0 ⟨x.1, sorry⟩) else (F0 ⟨x.1.swap, sorry⟩)
+
         -- F2 : (x,y) ↦ n ↔ n is the least such that x(n) ≠ y(n)
         let F2 (x : ordEdgeSet G) : ℕ := by
           have h4 : ∃ (n : ℕ), x.1.1 n ≠ x.1.2 n := by sorry
@@ -72,17 +75,19 @@ theorem FM_edgeCol_Cantor
         let bij := (Equiv.trans bij1 Nat.pairEquiv)
         use Function.comp bij.toFun c
         refine ⟨?_ , ?_⟩
+
         -- the composition is an edge colouring
         · sorry
+
         -- the composition is measurable
         · unfold c
           have F2Meas : Measurable F2 := by
             let lDMeas := leastDiffer_measurable
             measurability
           have F1Meas : Measurable F1 := by
-            unfold F1
             sorry
           measurability
+
       -- the other case of LN
       · exfalso
         have : Uncountable (ℕ → Bool) := nat_bool_uncountable
