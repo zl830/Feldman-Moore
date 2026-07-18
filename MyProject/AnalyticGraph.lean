@@ -1,131 +1,95 @@
+module
+public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 
-import Mathlib.Topology.Basic
-import Mathlib.Topology.Defs.Basic
-import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import Mathlib.Tactic
-import MyProject.LusinNovikov
-import Mathlib.MeasureTheory.MeasurableSpace.Defs
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-import Mathlib.Data.Set.Operations
-import Mathlib.Topology.Separation.Hausdorff
+public section
 
-open TopologicalSpace
+variable {X Y : Type*}
+  [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X] [PolishSpace X]
+  [MeasurableSpace Y] [TopologicalSpace Y] [BorelSpace Y] [PolishSpace Y]
 
-/-- X,Y std Borel spaces, f : X → Y is Borel if graph(f) is analytic.
--/
-theorem fun_borel_if_graphAnalytic {X Y : Type*}
-[MeasurableSpace X] [TopologicalSpace X] [BorelSpace X]
-[PolishSpace X] [MeasurableSpace Y] [TopologicalSpace Y] [BorelSpace Y] [PolishSpace Y]
-{f : X → Y} (analytic_graph : MeasureTheory.AnalyticSet (Set.graphOn f Set.univ)) :
+/-- Preimage of a Borel set under a function whose graph is analytic is analytic. -/
+lemma analyticSet_preimage_of_measurableSet_of_analyticSet_graph
+    {f : X → Y} (analytic_graph : MeasureTheory.AnalyticSet {(x, y) : X × Y | y = f x})
+    {A : Set Y} (MeasA : MeasurableSet A) :
+    MeasureTheory.AnalyticSet (f ⁻¹' A) := by
+  have h₁ : ∀ x : X, (x ∈ f⁻¹' A) ↔ (∃ y : Y, f x = y ∧ y ∈ A) := by grind
+  have h₂ : f⁻¹' A = Prod.fst '' (Prod.snd⁻¹' A ∩ { (x, y) : X × Y | y = f x }) :=
+    by ext; simp [h₁]
+  rw [h₂]
+  apply MeasureTheory.AnalyticSet.image_of_continuous
+  · rw [Set.inter_eq_iInter]
+    apply MeasureTheory.AnalyticSet.iInter
+    rintro (_ | _)
+    · exact analytic_graph
+    · apply MeasurableSet.analyticSet
+      apply MeasA.preimage
+      fun_prop
+  · fun_prop
+
+/-- A map between two standard Borel spaces is Borel if its graph is analytic. -/
+@[fun_prop]
+theorem measurable_of_analyticSet_graph
+    {f : X → Y} (analytic_graph : MeasureTheory.AnalyticSet {(x, y) : X × Y | y = f x}) :
     Measurable f := by
-  let graph := Set.graphOn f Set.univ
-  /- preimage of measurable is measurable-/
-  have (A : Set Y) (MeasA : MeasurableSet A) : MeasureTheory.AnalyticSet (f ⁻¹' A) := by
-    have h₁ : ∀ x : X, (x ∈ f⁻¹' A) ↔ (∃ y : Y, f x = y ∧ y ∈ A) := by grind
-    have h₂ : f⁻¹' A = Prod.fst '' (Prod.snd⁻¹' A ∩ graph) := by
-      ext
-      constructor
-      · simp [h₁, graph]
-      · simp [h₁, graph]
-    rw [h₂]
-    apply MeasureTheory.AnalyticSet.image_of_continuous
-    · rw [Set.inter_eq_iInter]
-      apply MeasureTheory.AnalyticSet.iInter
-      intro b
-      cases b
-      · exact analytic_graph
-      · apply MeasurableSet.analyticSet
-        apply MeasA.preimage
-        fun_prop
-    · fun_prop
-  /- concluding-/
+  /- We'll prove that preimage of measurable set is measurable. -/
   intro A MeasA
   apply MeasureTheory.AnalyticSet.measurableSet_of_compl
-  · apply this A MeasA
+  · apply analyticSet_preimage_of_measurableSet_of_analyticSet_graph analytic_graph MeasA
   · rw [← Set.preimage_compl]
-    apply this
-    exact MeasA.compl
+    apply analyticSet_preimage_of_measurableSet_of_analyticSet_graph analytic_graph MeasA.compl
 
 
-/-- for f: X → Y, for Hausdorff second-countable Y with countable basis V,
- graph(f) = {(x,y) | ∀ n : ℕ , y ∈ V n ↔ x ∈ Set.preimage f (V n)} -/
-theorem graph_equivalence {X Y : Type*} [TopologicalSpace Y] [SecondCountableTopology Y] [T2Space Y]
-(f : X → Y) (V : Set (Set Y)) (hV : IsTopologicalBasis V) :
-(Set.graphOn f Set.univ) = {x : X × Y | ∀ v ∈ V , x.1 ∈ Set.preimage f v ↔ x.2 ∈ v } := by
-  ext x
+theorem TopologicalSpace.IsTopologicalBasis.eq_iff_all_mem_iff {X : Type*}
+    [TopologicalSpace X] [T1Space X]
+    {V : Set (Set X)} (hV : IsTopologicalBasis V)
+    (a b : X) :
+    a = b ↔ ∀ v ∈ V, a ∈ v ↔ b ∈ v := by
   constructor
-  · unfold Set.graphOn
+  · grind
+  · contrapose
+    intro ne
+    have := hV.exists_mem_of_ne ne
     grind
-  · unfold Set.graphOn
-    intro hx
-    simp only [Set.image_univ, Set.mem_range]
-    use x.1
-    ext
-    · grind
-    · simp only
-      by_contra
-      let h1 := t2_separation this
-      rcases h1 with ⟨u, ⟨v, ⟨openu, ⟨openv, ⟨fx1u , x2v ,disjointuv⟩⟩⟩⟩⟩
-      simp at hx
-      let h2 := IsTopologicalBasis.exists_subset_of_mem_open hV x2v openv
-      rcases h2 with ⟨w, ⟨wBasic , x2w , wsubv⟩⟩
-      have h3 : f x.1 ∉ w := by
-        grind
-      grind
 
 
-/-- X, Y standard Borel spaces, if f : X → Y is Borel function then graph(f) is borel. -/
-theorem measurableSet_graph' {X Y : Type*} [MeasurableSpace X]
-[MeasurableSpace Y] [TopologicalSpace Y] [SecondCountableTopology Y] [BorelSpace Y] [T2Space Y]
-  {f : X → Y} (measf : Measurable f) : MeasurableSet (Set.graphOn f Set.univ) := by
+theorem TopologicalSpace.IsTopologicalBasis.graph_eq {X Y : Type*}
+    [TopologicalSpace Y] [T1Space Y]
+    {V : Set (Set Y)} (hV : IsTopologicalBasis V)
+    (f : X → Y) :
+    { (x, y) : X × Y | y = f x } = { (x, y) : X × Y | ∀ v ∈ V , x ∈ f ⁻¹' v ↔ y ∈ v } := by
+  ext x
+  have := hV.eq_iff_all_mem_iff (f x.1) x.2
+  grind [Set.graphOn, Set.image_univ]
 
-  let graph := (Set.graphOn f Set.univ)
-  /- exhibit countable basis V-/
-  let haveCtnlBasis := TopologicalSpace.exists_seq_basis Y
-  rcases haveCtnlBasis with ⟨V , hV⟩
-  /- sets in V are open and measurable-/
-  have h4 : ∀ n : ℕ, IsOpen (V n) := by intro n; exact hV.isOpen (by exact ⟨n, rfl⟩)
-  have h8 : ∀ n : ℕ, MeasurableSet (V n) := by intro n; apply IsOpen.measurableSet (h4 n)
-  /- an equivalent way of saying "graph"-/
-  have hIff3 : ∀ x : X × Y, x ∈ graph ↔ ∀ n : ℕ , x.2 ∈ V n ↔ x.1 ∈ Set.preimage f (V n) := by
-    have hV1 : IsTopologicalBasis (Set.range V) := by grind
-    let h6 := graph_equivalence f (Set.range V) hV1
-    grind
-  let A (n : ℕ ) : Set (X × Y) := { x : X × Y | x.1 ∈ Set.preimage f (V n) ↔ x.2 ∈ (V n)}
-  have hIff2 : graph = (⋂ n : ℕ, A n) := by
-    have h5 : (⋂ n : ℕ, A n) =
-    { x : X × Y | ∀ n : ℕ, x.1 ∈ Set.preimage f (V n) ↔ x.2 ∈ (V n)} := by
-      ext x
-      simp [A]
-    grind
-  /-A n are measurable-/
-  have measA : ∀ n : ℕ, MeasurableSet (A n) := by
-    intro n
-    refine MeasurableSet.iff ?_ ?_
-    · have h1 : MeasurableSet (f⁻¹' V n) := by
-        have h3 : MeasurableSet (V n) := by
-          apply IsOpen.measurableSet (h4 n)
-        measurability
-      have h2 : {x | x.1 ∈ f ⁻¹' V n} = (f ⁻¹' V n) ×ˢ (Set.univ : Set Y) := by grind
-      measurability
-    · have h7 : {x | x.2 ∈ V n} = (Set.univ : Set X) ×ˢ V n := by grind
-      measurability
-  /- concluding-/
-  have measGraph : MeasurableSet graph := by
-    rw [hIff2]
-    apply MeasurableSet.iInter measA
-  assumption
+
+/-- A measurable function into a countably separated space has a measurable graph. -/
+@[measurability]
+theorem measurableSet_graph {X Y : Type*}
+    [MeasurableSpace X]
+    [MeasurableSpace Y] [cs : MeasurableSpace.CountablySeparated Y]
+    {f : X → Y} (measf : Measurable f) :
+    MeasurableSet { (x, y) : X × Y | y = f x } := by
+  let ⟨V, Vctbl, Vmeas, Vsep⟩ := cs.countably_separated
+  let A : Set (Set (X × Y)) := (fun v => { (x, y) : X × Y | x ∈ f ⁻¹' v ↔ y ∈ v }) '' V
+  have : { (x, y) : X × Y | y = f x } = ⋂₀ A := by
+    ext x
+    have := Vsep (f x.1) (Set.mem_univ _) x.2 (Set.mem_univ _)
+    simp [A]; grind
+  rw [this]
+  apply MeasurableSet.sInter (Vctbl.image _)
+  intro
+  measurability -- TODO very slow.
+
 
 /-- A function f: X → Y between standard Borel spaces is Borel
 iff its graph is analytic (iff its graph is Borel). -/
-theorem analyticSet_graph_iff_Borel_function {X Y : Type*}
-  [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X] [PolishSpace X]
-  [MeasurableSpace Y] [TopologicalSpace Y] [BorelSpace Y] [PolishSpace Y]
-  {f : X → Y} : Measurable f ↔  MeasureTheory.AnalyticSet (Set.graphOn f Set.univ) := by
-  let graph := (Set.graphOn f Set.univ)
+theorem analyticSet_graph_iff_measurable {X Y : Type*}
+    [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X] [PolishSpace X]
+    [MeasurableSpace Y] [TopologicalSpace Y] [BorelSpace Y] [PolishSpace Y]
+    (f : X → Y) :
+    Measurable f ↔ MeasureTheory.AnalyticSet { (x, y) : X × Y | y = f x } := by
   constructor
-  · intro measf
-    have borelGraph : MeasurableSet graph  := measurableSet_graph' measf
-    apply _root_.MeasurableSet.analyticSet borelGraph
-  · intro graphAnalytic
-    apply fun_borel_if_graphAnalytic graphAnalytic
+  · intro
+    apply MeasurableSet.analyticSet
+    measurability
+  · measurability

@@ -5,9 +5,14 @@ Author: Zelong Li and Ran Tao
 
 
 import Mathlib.Topology.Basic
+import Mathlib.Topology.Defs.Basic
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.Tactic
 import MyProject.LusinNovikov
+import Mathlib.MeasureTheory.MeasurableSpace.Defs
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+import Mathlib.Data.Set.Operations
+import Mathlib.Topology.Separation.Hausdorff
 
 /-!
   Project for ICARM Summer School
@@ -131,6 +136,9 @@ theorem fun_borel_if_analytic {X Y : Type*} [MeasurableSpace X] [TopologicalSpac
     apply this
     exact MeasA.compl
 
+
+variable {α : Type} (A : ℕ → Set α)
+
 /-- Lusin Novikov for Borel sets
 -/
 theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpace X]
@@ -156,6 +164,109 @@ theorem FullLusinNovikov {X Y : Type*} [Nonempty X] [Nonempty Y] [MeasurableSpac
     rw [MeasureTheory.borel_eq_borel_of_le Polishτ hPolish fineτ, t₀Borel.measurable_eq]
   have h₁ := @LN_BorelFunction A _ _ Polishτ Borelτ X _ _ f Measf
   rcases h₁ with h₂ | h₃
+  · left
+    rcases h₂ with ⟨S, hS₁, hS₂, hS₃⟩
+    rcases Set.eq_empty_or_nonempty S with empty | nonempty
+    · rw [empty] at hS₃
+      simp at hS₃
+      use fun n x => Classical.arbitrary Y
+      simp [hS₃]
+    · have enum := hS₂.exists_eq_range nonempty
+      rcases enum with ⟨enum, rfl⟩
+      rw [Set.forall_mem_range] at hS₁
+      unfold BorelPartialSection at hS₁
+      classical
+      let G (n : ℕ) : f '' enum n → Y := fun x => x.2.choose.1.2
+      let const (n : ℕ) : ((f '' enum n)ᶜ : Set X) → Y := fun x => Classical.arbitrary Y
+      let F : ℕ → X → Y := fun n x => if defined : x ∈ f '' enum n
+        then G n ⟨x, defined⟩ else const n ⟨x, defined⟩
+      use F
+      constructor
+      · intro n
+        unfold F
+        apply Measurable.dite
+        · have boreln : MeasurableSet (f '' enum n) := by
+            apply MeasurableSet.image_of_measurable_injOn
+            · apply (hS₁ n).left
+            · apply Measf
+            · apply (hS₁ n).right
+          have := boreln.standardBorel
+          letI := upgradeStandardBorel (f '' enum n)
+          let polishenum := (upgradeStandardBorel (f '' enum n)).toTopologicalSpace
+          apply fun_borel_if_analytic
+          apply MeasurableSet.analyticSet
+          have hG : Set.graphOn (G n) Set.univ = Prod.map (↑) id ⁻¹' Subtype.val '' enum n := by
+            ext x
+            simp only [Set.mem_graphOn, Set.mem_univ, true_and, Set.mem_preimage, Prod.map, id_eq,
+              G]
+            generalize_proofs p₂
+            have pchoose := p₂.choose_spec
+            unfold f
+            constructor
+            · grind
+            · intro h
+              have hfinj := (hS₁ n).right
+              obtain ⟨u, hue, huk⟩ := h
+              specialize @hfinj p₂.choose pchoose.1 u hue
+              rw [pchoose.2, Subtype.ext_iff, huk] at hfinj
+              exact congrArg Prod.snd (hfinj (congrArg Prod.fst huk.symm))
+          rw [hG]
+          apply MeasurableSet.preimage
+          · apply MeasurableSet.image_of_measurable_injOn
+            · apply (hS₁ n).left
+            · fun_prop
+            · simp
+          · fun_prop
+        · unfold const
+          fun_prop
+        · apply MeasurableSet.image_of_measurable_injOn
+          · apply (hS₁ n).left
+          · apply Measf
+          · apply (hS₁ n).right
+      · intro p pA
+        specialize hS₃ (Set.mem_univ ⟨p, pA⟩)
+        rw [Set.mem_sUnion] at hS₃
+        rcases hS₃ with ⟨t, inenum, int⟩
+        rw [Set.mem_range] at inenum
+        rcases inenum with ⟨n, rfl⟩
+        rw [Set.mem_iUnion]
+        use n
+        rw [Set.mem_setOf]
+        unfold F
+        have h : p.1 ∈ f '' enum n := by
+          rw [Set.mem_image]
+          use ⟨p, pA⟩
+        rw [dif_pos h]
+        unfold G
+        generalize_proofs p₂
+        have pchoose := p₂.choose_spec
+        rw [(hS₁ n).right pchoose.1 int pchoose.2]
+  · right
+    rcases h₃ with ⟨g, contg, injg, fiberg⟩
+    use f (g (Classical.arbitrary (ℕ → Bool)))
+    let g' : (ℕ → Bool) → {y | (f (g (Classical.arbitrary (ℕ → Bool))), y) ∈ A} := fun s =>
+      ⟨(g s).1.2, by simp only [fiberg _ s, Set.mem_setOf_eq]; exact (g s).2⟩
+    use g'
+    constructor
+    · have contg' := @Continuous.comp _ _ _ (_) (_) (_) _ _ contτ contg
+      unfold g'
+      rw [Topology.IsInducing.subtypeVal.continuous_iff]
+      dsimp [Function.comp_def]
+      apply Continuous.snd
+      apply Continuous.subtype_val
+      exact contg'
+    · intro s₁ s₂ g'sseq
+      apply injg
+      ext
+      · apply fiberg
+      · unfold g' at g'sseq
+        apply congrArg Subtype.val g'sseq
+
+
+
+
+end Project
+ases h₁ with h₂ | h₃
   · left
     rcases h₂ with ⟨S, hS₁, hS₂, hS₃⟩
     rcases Set.eq_empty_or_nonempty S with empty | nonempty
