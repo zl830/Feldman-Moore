@@ -77,8 +77,9 @@ theorem measurableSet_graph {X Y : Type*}
     simp [A]; grind
   rw [this]
   apply MeasurableSet.sInter (Vctbl.image _)
-  intro
-  measurability -- TODO very slow.
+  simp only [Set.mem_preimage, Set.mem_image, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, measurableSet_setOf]
+  fun_prop (disch := measurability)
 
 
 /-- A function f: X → Y between standard Borel spaces is Borel
