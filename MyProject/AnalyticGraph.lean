@@ -92,8 +92,7 @@ theorem analyticSet_graph_iff_measurable {X Y : Type*}
   constructor
   · intro
     apply MeasurableSet.analyticSet
-    simp_all only [measurableSet_setOf]
-    (fun_prop (disch := measurability))
+    simp only [measurableSet_setOf]
+    fun_prop (disch := measurability)
   · intro a
-    simp_all only
-    (fun_prop (disch := measurability))
+    fun_prop (disch := measurability)
